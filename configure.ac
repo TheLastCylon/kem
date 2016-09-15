@@ -15,9 +15,6 @@ BOOST_REQUIRE([1.54.0])
 #BOOST_DATE_TIME
 #BOOST_PROGRAM_OPTIONS
 
-MYSQL_CLIENT([5.5.40], [client])
-MYSQLPP_DEVEL()
-
 BOOST_CFLAGS="-I/usr/include"
 AC_ARG_WITH([boost-include-path],
             [AS_HELP_STRING([--with-boost-include-path], [location of the boost headers, defaults to /usr/include])],
