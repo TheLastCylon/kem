@@ -1,0 +1,10 @@
+{
+  "kcc-server" : {
+    "address"        : "localhost",
+    "port"           : "8000"
+  },
+
+  "subscribers" : {
+    "rabbitmq" : { "config_file":"/home/bothadj/kisscpp/conf/kem/kem.0.subscribers.rabbitmq" }
+  }
+}
