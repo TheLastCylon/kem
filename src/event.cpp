@@ -6,19 +6,20 @@ std::string Event::toString()
   BoostPtree        inner;
   BoostPtree        outer;
   BoostPtree        notified_subscribers;
-  BoostPtree        notified_queues;
   std::stringstream tmp_string_storage;
   std::string       retval;
 
   inner.put("timestamp", timestamp);
   inner.put("name"     , name     );
   inner.put("payload"  , payload  );
-//TODO: add notified subscribers and queues
 
+  for(StringSetIter itr = notifiedSubscribers.begin(); itr != notifiedSubscribers.end(); ++itr) {
+    BoostPtree subscriber_id;
+    subscriber_id.put("",*itr);
+    notified_subscribers.push_back(std::make_pair("",subscriber_id));
+  }
 
-//  for(StringSetIter itr = notifiedSubscribers.begin(); itr != notifiedSubscribers.end(); ++itr) {
-//    notified_subscribers
-//  }
+  inner.add_child("notified-subscribers", notified_subscribers);
 
   outer.add_child("event",inner);
 
@@ -45,7 +46,10 @@ void Event::fromString(const std::string &istr)
   name      = pt.get<std::string>("event.name"     );
   payload   = pt.get<std::string>("event.payload"  );
 
-//TODO: add notified subscribers and queues
+  BOOST_FOREACH(boost::property_tree::ptree::value_type const& v, pt.get_child("notified-subscribers")) {
+    std::string subscriber_id = v.second.data();
+    addNotifiedSubscriber(subscriber_id);
+  }
 }
 
 //--------------------------------------------------------------------------------

@@ -1,0 +1,8 @@
+{
+  "events" : [
+    { "event" : "<event1>" , subscribers: [ {"host" : "<event-host1-1>", "port" : "1234"},
+                                            {"host" : "<event-host1-2>", "port" : "5678"} ] },
+    { "event" : "<event2>" , subscribers: [ {"host" : "<event-host2-1>", "port" : "9012"},
+                                            {"host" : "<event-host2-1>", "port" : "9012"} ] }
+  ]
+}

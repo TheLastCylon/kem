@@ -26,7 +26,6 @@
 #include "handler_subscribe.hpp"
 #include "subscriber.hpp"
 #include "events_registry.hpp"
-#include "rabbitmq_registry.hpp"
 
 class KissEventManager : public kisscpp::Server
 {
@@ -53,7 +52,6 @@ class KissEventManager : public kisscpp::Server
 
     EventsRegistry             events_registry;
     Subscribers                subscribers;
-    RabbitMQRegistry           rabbitmq_registry;
 
     kisscpp::RequestHandlerPtr publishHandler;
     kisscpp::RequestHandlerPtr subscribeHandler;

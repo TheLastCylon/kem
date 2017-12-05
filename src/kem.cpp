@@ -16,7 +16,6 @@ KissEventManager::KissEventManager(const std::string &instance,
 
   log.setMaxBufferSize(0);
 
-
   constructQueues ();
   registerHandlers();
   loadSubscribers ();
@@ -69,39 +68,26 @@ void KissEventManager::loadSubscribers()
 {
   kisscpp::LogStream          log(__PRETTY_FUNCTION__);
   boost::property_tree::ptree subscribers_kisscpp;
-  boost::property_tree::ptree subscribers_rabbitmq;
   std::string                 kisscpp_file  = CFG->get<std::string>("subscribers.kisscpp.config_file" ,"");
-  std::string                 rabbitmq_file = CFG->get<std::string>("subscribers.rabbitmq.config_file","");
+
+  log << "kem subscriber files for KISSCPP ["  << kisscpp_file  << "]" << kisscpp::manip::endl;
 
   if(kisscpp_file != "") {
+    log << "Processing KISSCPP." << kisscpp::manip::endl;
     read_json(kisscpp_file, subscribers_kisscpp);
    
-    BOOST_FOREACH(boost::property_tree::ptree::value_type const& v, subscribers_kisscpp.get_child("subscribers")) {
-      std::string event_name    = v.second.get<std::string>("event-name");
-      std::string subscriber_id = subscribers.add(v.second.get<std::string>("host"), v.second.get<std::string>("port")); 
-   
-      events_registry.subscribe_kcpp(event_name, subscriber_id);
-   
-      log << "Added KISSCPP subscriber [" << subscriber_id << "] to event [" << event_name << "]" << kisscpp::manip::endl;
-    }
-  }
+    BOOST_FOREACH(boost::property_tree::ptree::value_type const& v, subscribers_kisscpp.get_child("events")) {
+      std::string event_name    = v.second.get<std::string>("event");
 
-  if(rabbitmq_file != "") {
-    read_json(rabbitmq_file, subscribers_rabbitmq);
-   
-    BOOST_FOREACH(boost::property_tree::ptree::value_type const& v, subscribers_rabbitmq.get_child("subscribers")) {
-      std::string event_name = v.second.get<std::string>("event-name");
-      std::string queue_name = v.second.get<std::string>("queue_name");
-   
-      rabbitmq_registry.add(queue_name,
-                            v.second.get<std::string>("host"),
-                            v.second.get<int        >("port"),
-                            v.second.get<std::string>("username"),
-                            v.second.get<std::string>("password"));
-   
-      events_registry.subscribe_queue(event_name, queue_name);
-   
-      log << "Added RABBITMQ queue [" << queue_name << "] to event [" << event_name << "]" << kisscpp::manip::endl;
+      BOOST_FOREACH(boost::property_tree::ptree::value_type const& x, v.second.get_child("subscribers")) {
+        std::string subscriber_id = subscribers.add(x.second.get<std::string>("host"), x.second.get<std::string>("port")); 
+        events_registry.subscribe_kcpp(event_name, subscriber_id);
+        log << "Added KISSCPP subscriber [" << subscriber_id
+            << "] to event ["               << event_name
+            << "] host ["                   << x.second.get<std::string>("host")
+            << "] port ["                   << x.second.get<std::string>("port")
+            << "]"                          << kisscpp::manip::endl;
+      }
     }
   }
 }
@@ -141,14 +127,14 @@ void KissEventManager::processor_event_notifications()
             std::string thost = subscribers.getSubscriberHost(*itr);
             std::string tport = subscribers.getSubscriberPort(*itr);
          
-            event_notification.put("kcm-cmd"      , "kem-event");
+            event_notification.put("kcm-cmd"      , event_name);
             event_notification.put("kcm-hst"      , thost);
             event_notification.put("kcm-prt"      , tport);
-            event_notification.put("event.name"   , event_name);
+            //event_notification.put("event.name"   , event_name);
             event_notification.put("event.payload", event_payload);
          
             try {
-              log << "About to do client call. Host [" << thost << "] Port [" << tport << "]" << kisscpp::manip::endl;
+              log << "About to do client call. Subscriber [" << *itr << "] Host [" << thost << "] Port [" << tport << "]" << kisscpp::manip::endl;
               kisscpp::client requestSender(event_notification, &event_notification_response, 5);
               log << "Client call successfull." << kisscpp::manip::endl;
               event->addNotifiedSubscriber(*itr);
@@ -158,22 +144,6 @@ void KissEventManager::processor_event_notifications()
             }
           }
         } catch(EmptyKSubscriberSetException &e) { log << "Exception: " << e.what() << kisscpp::manip::endl; }
-
-        try {
-          q_subscribers        = events_registry.getEventQSubscribers(event_name); 
-          q_subscribers2notify = event->getQueues2Notify     (q_subscribers);
-          event_payload_decode = event->getPayloadBase64Decode();
-
-          for(StringSetIter itr = q_subscribers2notify.begin(); itr != q_subscribers2notify.end(); ++itr) {
-            try {
-              rabbitmq_registry.publish_message(*itr, event_payload_decode);
-              event->addNotifiedQueue(*itr);
-            } catch(kisscpp::RetryableCommsFailure &e) { log << "Retryable comms failure: " << e.what() << kisscpp::manip::endl; push_back_on_events = true;
-            } catch(kisscpp::PerminantCommsFailure &e) { log << "Perminant comms failure: " << e.what() << kisscpp::manip::endl; push_back_on_error  = true; //q_events_error->push(event);
-            } catch(std::exception                 &e) { log << "Exception: "               << e.what() << kisscpp::manip::endl; push_back_on_error  = true; //q_events_error->push(event);
-            }
-          }
-        } catch(EmptyQSubscriberSetException &e) { log << "Exception: " << e.what() << kisscpp::manip::endl; }
 
       } catch(std::exception &e) { log << "Exception: " << e.what() << kisscpp::manip::endl; push_back_on_error  = true; //q_events_error->push(event);
       }

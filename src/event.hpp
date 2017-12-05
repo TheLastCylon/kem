@@ -23,7 +23,6 @@ typedef base64_from_binary<transform_width<std::string::const_iterator,6,8> >   
 #include <kisscpp/boost_ptree.hpp>
 
 #include "subscriber.hpp"
-#include "rabbitmq_registry.hpp"
 #include "string_set.hpp"
 
 //--------------------------------------------------------------------------------
@@ -47,10 +46,8 @@ class Event
     void          setName               (const std::string   &val) { name      = val; }
     void          setPayload            (const std::string   &val) { payload   = val; }
     void          addNotifiedSubscriber (const std::string   &val) { notifiedSubscribers.insert(val); }
-    void          addNotifiedQueue      (const std::string   &val) { notifiedQueues     .insert(val); }
 
     StringSet     getSubscribers2Notify (const StringSet &subscribers) { return diffStringSet(subscribers, notifiedSubscribers); }
-    StringSet     getQueues2Notify      (const StringSet &queue_names) { return diffStringSet(queue_names, notifiedQueues);      }
 
     std::string   toString              ();
     void          fromString            (const std::string   &istr);
@@ -61,7 +58,6 @@ class Event
     std::string payload;
 
     StringSet   notifiedSubscribers;
-    StringSet   notifiedQueues;
 };
 
 //--------------------------------------------------------------------------------

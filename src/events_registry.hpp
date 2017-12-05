@@ -7,7 +7,6 @@
 #include <map>
 
 #include "subscriber.hpp"
-#include "rabbitmq_registry.hpp"
 
 //--------------------------------------------------------------------------------
 class EmptySubscriberSetException : public std::exception
@@ -34,14 +33,6 @@ class EmptyKSubscriberSetException : public EmptySubscriberSetException
 };
 
 //--------------------------------------------------------------------------------
-class EmptyQSubscriberSetException : public EmptySubscriberSetException
-{
-  public:
-    EmptyQSubscriberSetException()                              { message = "No RABBITMQ subscribers for event."; }
-    EmptyQSubscriberSetException(const std::string &event_name) { std::stringstream ss; ss << "No RABBITMQ subscribers for event: " << event_name; message = ss.str(); }
-};
-
-//--------------------------------------------------------------------------------
 class EventsRegistry
 {
   public:
@@ -49,7 +40,6 @@ class EventsRegistry
     ~EventsRegistry() {}
 
     void subscribe_kcpp (const std::string &eventName, const std::string &id) { k_subscribers[eventName].insert(id); };
-    void subscribe_queue(const std::string &eventName, const std::string &id) { q_subscribers[eventName].insert(id); };
 
     StringSet getEventKSubscribers(const std::string &eventName)
     {
@@ -60,20 +50,9 @@ class EventsRegistry
       }
     };
 
-    StringSet getEventQSubscribers(const std::string &eventName)
-    {
-      if(q_subscribers.find(eventName) != q_subscribers.end()) {
-        return q_subscribers[eventName];
-      } else {
-        throw EmptyQSubscriberSetException(eventName);
-      }
-    };
-
-
   protected:
   private:
     std::map<std::string, StringSet> k_subscribers;
-    std::map<std::string, StringSet> q_subscribers;
 };
 
 #endif // _EVETNS_REGISTRY_HPP_
